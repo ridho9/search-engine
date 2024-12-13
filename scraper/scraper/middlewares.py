@@ -6,7 +6,8 @@
 from scrapy import signals
 
 # useful for handling different item types with a single interface
-from itemadapter import is_item, ItemAdapter
+from itemadapter.utils import is_item
+from itemadapter.adapter import ItemAdapter
 
 
 class ScraperSpiderMiddleware:
