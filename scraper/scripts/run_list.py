@@ -1,4 +1,6 @@
+import urllib.parse
 import requests
+import urllib
 
 
 def start_scrape(scrape_url):
@@ -14,7 +16,13 @@ def start_scrape(scrape_url):
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        data = {"project": "myproject", "spider": "generic", "scrape_url": final_url}
+        netloc = urllib.parse.urlparse(final_url).netloc
+        data = {
+            "project": "myproject",
+            "spider": "generic",
+            "scrape_url": final_url,
+            "jobid": netloc,
+        }
 
         response = requests.post(
             "http://localhost:6800/schedule.json", headers=headers, data=data

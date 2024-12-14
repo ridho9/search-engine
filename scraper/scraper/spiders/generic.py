@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 from typing import Any
 import urllib.parse
 import scrapy
@@ -6,10 +5,7 @@ from bs4 import BeautifulSoup
 from scrapy.crawler import Crawler
 import scrapy.http
 from scrapy.linkextractors import LinkExtractor  # type: ignore
-from datetime import datetime
 
-from scrapy.settings import BaseSettings
-import requests
 import urllib
 from scraper.items import PageItem
 
@@ -62,13 +58,7 @@ class GenericSpider(scrapy.Spider):
         cleaned_text = clean_html_text(response.text)
         meta_title = response.css('meta[name="title"]::attr(content)').get()
         meta_desc = response.css('meta[name="description"]::attr(content)').get()
-        # yield {
-        #     "url": response.url,
-        #     "title": title,
-        #     "text": cleaned_text,
-        #     "meta_title": meta_title,
-        #     "meta_desc": meta_desc,
-        # }
+
         self.logger.info(f"Parse {response.url} {title}")
         yield PageItem(
             url=response.url,
