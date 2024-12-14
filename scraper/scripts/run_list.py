@@ -2,6 +2,8 @@ import urllib.parse
 import requests
 import urllib
 
+seen_netloc = set()
+
 
 def start_scrape(scrape_url):
     try:
@@ -12,11 +14,15 @@ def start_scrape(scrape_url):
         resp = requests.get(url)
         final_url = resp.url
 
+        netloc = urllib.parse.urlparse(final_url).netloc
+        if netloc in seen_netloc:
+            print(f"Skip {final_url} {netloc=} as it is a duplicate")
+        seen_netloc.add(netloc)
+
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        netloc = urllib.parse.urlparse(final_url).netloc
         data = {
             "project": "myproject",
             "spider": "generic",
