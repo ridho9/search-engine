@@ -1,0 +1,8 @@
+services:
+  scraper:
+    build: ./scraper
+    ports:
+      - "6800:6800"
+    volumes:
+      - ./output:/output
+      - ./scrapyd_data:/var/lib/scrapyd
