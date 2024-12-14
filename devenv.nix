@@ -17,6 +17,7 @@
   # languages.rust.enable = true;
   languages.python.enable = true;
   languages.python.poetry.enable = true;
+  # languages.python.uv.enable = true;
 
   # https://devenv.sh/processes/
   # processes.cargo-watch.exec = "cargo-watch";
@@ -25,14 +26,11 @@
   # services.postgres.enable = true;
 
   # https://devenv.sh/scripts/
-  scripts.hello.exec = ''
-    echo hello from $GREET
-  '';
+  # scripts.hello.exec = ''
+  #   echo hello from $GREET
+  # '';
 
-  enterShell = ''
-    hello
-    git --version
-  '';
+  enterShell = '''';
 
   # https://devenv.sh/tasks/
   # tasks = {

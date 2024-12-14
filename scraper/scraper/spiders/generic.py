@@ -45,7 +45,7 @@ class GenericSpider(scrapy.Spider):
     def from_crawler(cls, crawler: Crawler, *args: Any, **kwargs: Any):
         spider = super().from_crawler(crawler, *args, **kwargs)
 
-        spider.settings.set("CLOSESPIDER_ITEMCOUNT", 10, priority="spider")
+        spider.settings.set("CLOSESPIDER_ITEMCOUNT", 100, priority="spider")
         spider.settings.set("LOG_LEVEL", "INFO", priority="spider")
 
         scrape_url = kwargs["scrape_url"]
