@@ -10,3 +10,4 @@ devenv.local.nix
 
 output/
 scrapyd_data/
+output-fix

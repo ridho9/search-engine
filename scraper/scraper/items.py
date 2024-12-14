@@ -26,8 +26,8 @@ class PageItem:
     url: str
     title: str
     text: str
-    meta_title: str
     meta_desc: str
+    meta_title: str
 
     def __repr__(self):
         return repr({"url": self.url, "title": self.title})

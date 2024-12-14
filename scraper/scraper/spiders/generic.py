@@ -8,6 +8,7 @@ from scrapy.linkextractors import LinkExtractor  # type: ignore
 
 import urllib
 from scraper.items import PageItem
+from trafilatura import extract, extract_metadata
 
 
 def clean_html_text(html_text):
@@ -53,19 +54,18 @@ class GenericSpider(scrapy.Spider):
         return spider
 
     def parse(self, response):
-        # return
-        title = response.css("title::text").get()
-        cleaned_text = clean_html_text(response.text)
-        meta_title = response.css('meta[name="title"]::attr(content)').get()
-        meta_desc = response.css('meta[name="description"]::attr(content)').get()
+        extracted_text = extract(response.text)
+        extracted_meta = extract_metadata(response.text)
 
-        self.logger.info(f"Parse {response.url} {title}")
+        title = response.css("title::text").get()
+
+        self.logger.info(f"Parse {response.url} {extracted_meta.title}")
         yield PageItem(
             url=response.url,
-            title=title,
-            text=cleaned_text,
-            meta_title=meta_title,
-            meta_desc=meta_desc,
+            title=title or "",
+            text=extracted_text or "",
+            meta_title=extracted_meta.title or "",
+            meta_desc=extracted_meta.description or "",
         )
 
         # links = response.css("a::attr(href)").getall()
