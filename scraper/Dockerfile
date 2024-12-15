@@ -1,8 +1,19 @@
 FROM python AS build-stage
 
-RUN pip install --no-cache-dir scrapyd-client
+ARG PIP_NO_CACHE_DIR=1
+
+# RUN python3 -m pip install --user pipx
+# RUN python3 -m pipx ensurepath
+# RUN python3 -m pipx install poetry
+RUN pip install poetry
+RUN poetry config virtualenvs.create false
 
 WORKDIR /workdir
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry export --without-hashes --format=requirements.txt > requirements.txt
+
+RUN pip install --no-cache-dir scrapyd-client
 
 COPY . .
 
@@ -28,7 +39,7 @@ RUN apk --no-cache add --virtual build-dependencies \
     libxml2 \
     libxslt
 
-COPY ./requirements.txt requirements.txt
+COPY --from=build-stage /workdir/requirements.txt requirements.txt
 RUN pip install -r ./requirements.txt
 
 # Mount two volumes for configuration and runtime.
