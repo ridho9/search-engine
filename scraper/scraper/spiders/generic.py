@@ -33,10 +33,14 @@ class GenericSpider(scrapy.Spider):
         self.start_urls = [kwargs["scrape_url"]]
         allowed = set()
         for url in self.start_urls:
-            allowed.add(get_netloc(url))
+            netloc = get_netloc(url)
+            allowed.add(netloc)
+            netloc_split = netloc.split(".")
+            if netloc_split[0] == "www":
+                allowed.add(".".join(netloc_split[1:]))
 
         self.allowed_domains = list(allowed)
-        print(self.start_urls, allowed, self.allowed_domains)
+        self.logger.info(f"{self.start_urls} {allowed} {self.allowed_domains}")
 
     @classmethod
     def from_crawler(cls, crawler: Crawler, *args: Any, **kwargs: Any):
@@ -60,13 +64,17 @@ class GenericSpider(scrapy.Spider):
         title = response.css("title::text").get()
 
         self.logger.info(f"Parse {response.url} {extracted_meta.title}")
-        yield PageItem(
-            url=response.url,
-            title=title or "",
-            text=extracted_text or "",
-            meta_title=extracted_meta.title or "",
-            meta_desc=extracted_meta.description or "",
-        )
+        # yield PageItem(
+        #     url=response.url,
+        #     title=title or "",
+        #     text=extracted_text or "",
+        #     meta_title=extracted_meta.title or "",
+        #     meta_desc=extracted_meta.description or "",
+        # )
+        yield {
+            "url": response.url,
+            "raw_html": response.text,
+        }
 
         # links = response.css("a::attr(href)").getall()
         links = self.link_extractor.extract_links(response=response)
