@@ -9,5 +9,8 @@ devenv.local.nix
 .pre-commit-config.yaml
 
 output/
+output-*/
 scrapyd_data/
 output-fix
+
+.venv/
