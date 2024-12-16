@@ -1,6 +1,9 @@
 mod index;
 
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 
 use axum::{
     extract::{Query, State},
@@ -12,8 +15,11 @@ use axum::{
 use index::{build_index, IndexField};
 use serde::{Deserialize, Serialize};
 use tantivy::{
-    collector::TopDocs, doc, query::QueryParser, schema::Value, Document, Index, IndexReader,
-    IndexWriter, TantivyDocument,
+    collector::TopDocs,
+    doc,
+    query::QueryParser,
+    schema::{Field, Value},
+    Document, Index, IndexReader, IndexWriter, TantivyDocument,
 };
 
 struct ServerConfig {
@@ -75,16 +81,28 @@ async fn insert_doc(
     let mut len = 0;
 
     for d in payload.documents {
+        let body_lines = d.body.split('\n');
+
         println!("insert {:#?} ", d.url);
-        writer.add_document(doc!(
+        let mut doc = doc!(
             state.field.url => d.url,
             state.field.title => d.title,
-            state.field.body => d.body,
-        ))?;
+        );
+        for b in body_lines {
+            let trimmed = b.trim();
+            if trimmed.len() == 0 {
+                continue;
+            }
+
+            doc.add_text(state.field.body, trimmed);
+        }
+
+        writer.add_document(doc)?;
+
         len += 1;
     }
 
-    let commit_res = writer.commit()?;
+    writer.commit()?;
 
     Ok(format!("insert {} items", len))
 }
@@ -104,28 +122,81 @@ struct QueryParam {
     query: String,
 }
 
+#[derive(Serialize)]
+struct QueryResponse {
+    q: String,
+    elapsed_ms: f64,
+    hits: Vec<HitsItem>,
+}
+
+#[derive(Serialize)]
+struct HitsItem {
+    score: f32,
+    doc: HitsDoc,
+}
+
+#[derive(Serialize)]
+struct HitsDoc {
+    url: Vec<String>,
+    title: Vec<String>,
+    body: Vec<String>,
+}
+
 async fn query_docs(
     State(state): State<Arc<ServerConfig>>,
-    Query(query): Query<QueryParam>,
+    Query(query_param): Query<QueryParam>,
 ) -> Result<impl IntoResponse, AppError> {
+    let start = Instant::now();
+
     let reader = &state.reader;
     let field = &state.field;
     let index = &state.index;
 
     let searcher = reader.searcher();
-    let query_parser = QueryParser::for_index(&index, vec![field.title, field.body]);
-    let query = query_parser.parse_query(&query.query)?;
+    let mut query_parser = QueryParser::for_index(&index, vec![field.title, field.body]);
+    query_parser.set_field_boost(field.title, 2.0);
+    let query = query_parser.parse_query(&query_param.query)?;
 
     let top_docs = searcher.search(&query, &TopDocs::with_limit(10))?;
-    let mut ret_docs = vec![];
-    for (_score, doc_address) in top_docs {
-        let retrieved_doc: TantivyDocument = searcher.doc(doc_address)?;
-        let j = retrieved_doc.to_json(&index.schema());
-        ret_docs.push(j);
-    }
-    let joined_str = format!("[{}]", ret_docs.join(", "));
 
-    Ok(([(header::CONTENT_TYPE, "application/json")], joined_str))
+    let mut ret_hits = vec![];
+
+    for (score, doc_address) in top_docs {
+        let retrieved_doc: TantivyDocument = searcher.doc(doc_address)?;
+
+        let url = retrieve_str_fields(&retrieved_doc, field.url);
+        let title = retrieve_str_fields(&retrieved_doc, field.title);
+        let body = retrieve_str_fields(&retrieved_doc, field.body);
+
+        let item = HitsItem {
+            score,
+            doc: HitsDoc { url, title, body },
+        };
+
+        ret_hits.push(item);
+    }
+
+    let elapsed_nanos = start.elapsed().as_nanos();
+    let elapsed_milis = (elapsed_nanos as f64) / 1_000_000.0;
+    println!("time taken {}ms", elapsed_milis);
+
+    // Ok(([(header::CONTENT_TYPE, "application/json")], joined_str))
+
+    let resp = QueryResponse {
+        q: query_param.query,
+        elapsed_ms: elapsed_milis,
+        hits: ret_hits,
+    };
+
+    Ok(Json(resp))
+}
+
+fn retrieve_str_fields(retrieved_doc: &TantivyDocument, field: Field) -> Vec<String> {
+    let ret_url: Vec<_> = retrieved_doc
+        .get_all(field)
+        .map(|v| v.as_str().unwrap().to_owned())
+        .collect();
+    return ret_url;
 }
 
 struct AppError(anyhow::Error);
