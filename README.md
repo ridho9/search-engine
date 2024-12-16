@@ -2,7 +2,19 @@
 
 ## Setup
 
+### Prerequisites
+
+1. Docker
+2. Python 3 with `requests` installed
+
+
+### Running The Service
+
 `docker compose up -d`
+
+### Running crawler
+
+`python3 ./scripts/run_list.py`
 
 
 ## Challenges

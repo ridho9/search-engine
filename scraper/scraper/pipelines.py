@@ -88,8 +88,29 @@ class MongoPipeline:
 
 
 class IndexPipeline:
+    BATCH_SIZE = 100
+
+    # def process_item(self, item, spider):
+    #     adapter = ItemAdapter(item)
+    #     host = os.getenv("ENGINE_HOST") or "http://localhost:3000"
+    #     resp = requests.post(host + "/api/docs", json=adapter.asdict())
+    #     print(f"insert {adapter.get("url")} {resp.status_code} {resp.text}")
+    def open_spider(self, spider):
+        self.items = []
+
     def process_item(self, item, spider):
-        adapter = ItemAdapter(item)
+        self.items.append(ItemAdapter(item).asdict())
+
+        if len(self.items) >= self.BATCH_SIZE:
+            self.commit()
+
+    def close_spider(self, spider):
+        self.commit()
+
+    def commit(self):
         host = os.getenv("ENGINE_HOST") or "http://localhost:3000"
-        resp = requests.post(host + "/api/docs", json=adapter.asdict())
-        print(f"insert {adapter.get("url")} {resp.status_code} {resp.text}")
+        json = {"documents": self.items}
+        resp = requests.post(host + "/api/docs", json=json)
+        print(f"insert {resp.status_code} {resp.text}")
+
+        self.items = []
