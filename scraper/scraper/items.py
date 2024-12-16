@@ -22,6 +22,15 @@ from dataclasses import dataclass
 
 
 @dataclass
+class RawPageItem:
+    url: str
+    raw_html: str
+
+    def __repr__(self):
+        return repr({"url": self.url})
+
+
+@dataclass
 class PageItem:
     url: str
     title: str

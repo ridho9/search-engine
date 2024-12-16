@@ -24,6 +24,9 @@
 
   # https://devenv.sh/services/
   # services.postgres.enable = true;
+  # services.mongodb = {
+  #   enable = true;
+  # };
 
   # https://devenv.sh/scripts/
   # scripts.hello.exec = ''

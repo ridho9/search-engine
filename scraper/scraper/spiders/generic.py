@@ -7,7 +7,7 @@ import scrapy.http
 from scrapy.linkextractors import LinkExtractor  # type: ignore
 
 import urllib
-from scraper.items import PageItem
+from scraper.items import PageItem, RawPageItem
 from trafilatura import extract, extract_metadata
 
 
@@ -46,35 +46,20 @@ class GenericSpider(scrapy.Spider):
     def from_crawler(cls, crawler: Crawler, *args: Any, **kwargs: Any):
         spider = super().from_crawler(crawler, *args, **kwargs)
 
-        spider.settings.set("CLOSESPIDER_ITEMCOUNT", 1000, priority="spider")
+        spider.settings.set("CLOSESPIDER_ITEMCOUNT", 10, priority="spider")
         spider.settings.set("LOG_LEVEL", "INFO", priority="spider")
 
         scrape_url = kwargs["scrape_url"]
         domain = get_netloc(scrape_url)
 
-        FEEDS = {f"output/{domain}.jsonl": {"format": "jsonlines", "overwrite": True}}
-        spider.settings.set("FEEDS", FEEDS, priority="spider")
+        # FEEDS = {f"output/{domain}.jsonl": {"format": "jsonlines", "overwrite": True}}
+        # spider.settings.set("FEEDS", FEEDS, priority="spider")
 
         return spider
 
     def parse(self, response):
-        extracted_text = extract(response.text)
-        extracted_meta = extract_metadata(response.text)
-
-        title = response.css("title::text").get()
-
-        self.logger.info(f"Parse {response.url} {extracted_meta.title}")
-        # yield PageItem(
-        #     url=response.url,
-        #     title=title or "",
-        #     text=extracted_text or "",
-        #     meta_title=extracted_meta.title or "",
-        #     meta_desc=extracted_meta.description or "",
-        # )
-        yield {
-            "url": response.url,
-            "raw_html": response.text,
-        }
+        self.logger.info(f"Parse {response.url}")
+        yield RawPageItem(url=response.url, raw_html=response.text)
 
         # links = response.css("a::attr(href)").getall()
         links = self.link_extractor.extract_links(response=response)
