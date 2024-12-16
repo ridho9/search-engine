@@ -1,0 +1,7 @@
+services:
+  engine-tt:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./index:/index

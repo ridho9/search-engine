@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import pymongo
 import os
 from scrapy.exceptions import DropItem
+import requests
 
 
 class DedupPipeline:
@@ -52,7 +53,6 @@ class ExtractPipeline:
             title=title,  # type: ignore
             body=ext_text or bs4_text,
         )
-        print("extracted", result["url"], result["title"])
         return result
         # return item
 
@@ -84,5 +84,12 @@ class MongoPipeline:
         to_insert = ItemAdapter(item).asdict()
         result = self.collection.insert_one(to_insert)
         item["_id"] = result.inserted_id
-        print(item["_id"], item["url"], item["title"])
         return item
+
+
+class IndexPipeline:
+    def process_item(self, item, spider):
+        adapter = ItemAdapter(item)
+        host = os.getenv("ENGINE_HOST") or "http://localhost:3000"
+        resp = requests.post(host + "/api/docs", json=adapter.asdict())
+        print(f"insert {adapter.get("url")} {resp.status_code} {resp.text}")

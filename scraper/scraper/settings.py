@@ -66,7 +66,8 @@ ROBOTSTXT_OBEY = True
 ITEM_PIPELINES = {
     "scraper.pipelines.DedupPipeline": 90,
     "scraper.pipelines.ExtractPipeline": 100,
-    "scraper.pipelines.MongoPipeline": 200,
+    # "scraper.pipelines.MongoPipeline": 200,
+    "scraper.pipelines.IndexPipeline": 200,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
