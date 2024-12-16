@@ -60,7 +60,7 @@ async fn insert_doc(
     State(state): State<Arc<ServerConfig>>,
     Json(payload): Json<InsertDoc>,
 ) -> Result<String, AppError> {
-    println!("insert {:#?} ", payload);
+    println!("insert {:#?} ", payload.url);
 
     let mut writer = state.writer.lock().unwrap();
     writer.add_document(doc!(

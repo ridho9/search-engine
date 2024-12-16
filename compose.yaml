@@ -9,6 +9,7 @@ services:
     environment:
       MONGO_URI: mongodb://root:password@mongo:27017/
       MONGO_DB: search-engine
+      ENGINE_HOST: http://engine-tt:3000
 
   mongo:
     image: mongo
@@ -29,3 +30,10 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: password
       ME_CONFIG_MONGODB_URL: mongodb://root:password@mongo:27017/
       ME_CONFIG_BASICAUTH: false
+
+  engine-tt:
+    build: ./engine-tt
+    # ports:
+    #   - "3000:3000"
+    volumes:
+      - ./index:/index
