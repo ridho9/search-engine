@@ -21,3 +21,6 @@
 
 1. Learning about the libraries
 2. Scraping relevant part of the page
+   1. Use trafilatura
+   2. Use `readabilipy`
+

@@ -443,6 +443,27 @@ testing = ["covdefaults (>=2.3)", "coverage (>=7.6.1)", "diff-cover (>=9.2)", "p
 typing = ["typing-extensions (>=4.12.2)"]
 
 [[package]]
+name = "html5lib"
+version = "1.1"
+description = "HTML parser based on the WHATWG HTML specification"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+files = [
+    {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
+    {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
+]
+
+[package.dependencies]
+six = ">=1.9"
+webencodings = "*"
+
+[package.extras]
+all = ["chardet (>=2.2)", "genshi", "lxml"]
+chardet = ["chardet (>=2.2)"]
+genshi = ["genshi"]
+lxml = ["lxml"]
+
+[[package]]
 name = "htmldate"
 version = "1.9.2"
 description = "Fast and robust extraction of original and updated publication dates from URLs and web pages."
@@ -980,6 +1001,28 @@ files = [
 ]
 
 [[package]]
+name = "readabilipy"
+version = "0.3.0"
+description = "Python wrapper for Mozilla's Readability.js"
+optional = false
+python-versions = ">=3.6.0"
+files = [
+    {file = "readabilipy-0.3.0-py3-none-any.whl", hash = "sha256:d106da0fad11d5fdfcde21f5c5385556bfa8ff0258483037d39ea6b1d6db3943"},
+    {file = "readabilipy-0.3.0.tar.gz", hash = "sha256:e13313771216953935ac031db4234bdb9725413534bfb3c19dbd6caab0887ae0"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.7.1"
+html5lib = "*"
+lxml = "*"
+regex = "*"
+
+[package.extras]
+dev = ["coveralls", "m2r", "pycodestyle", "pyflakes", "pylint", "pytest", "pytest-benchmark", "pytest-cov", "sphinx"]
+docs = ["m2r", "sphinx"]
+test = ["coveralls", "pycodestyle", "pyflakes", "pylint", "pytest", "pytest-benchmark", "pytest-cov"]
+
+[[package]]
 name = "regex"
 version = "2024.11.6"
 description = "Alternative regular expression module, to replace re."
@@ -1426,6 +1469,17 @@ files = [
 ]
 
 [[package]]
+name = "webencodings"
+version = "0.5.1"
+description = "Character encoding aliases for legacy web content"
+optional = false
+python-versions = "*"
+files = [
+    {file = "webencodings-0.5.1-py2.py3-none-any.whl", hash = "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78"},
+    {file = "webencodings-0.5.1.tar.gz", hash = "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"},
+]
+
+[[package]]
 name = "zope-interface"
 version = "7.2"
 description = "Interfaces for Python"
@@ -1482,4 +1536,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "72814cc5d5cddd840eb2bec317425d3f4081e3fd3090108492c348a0d000f6eb"
+content-hash = "f61ef8144e18ddf7c42a296cfbb4e32be397d7a1f429d3fb8bed81724273ec27"

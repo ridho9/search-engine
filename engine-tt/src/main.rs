@@ -69,7 +69,7 @@ struct Doc {
     // id: String,
     url: String,
     title: String,
-    body: String,
+    body: Vec<String>,
 }
 
 async fn insert_doc(
@@ -81,20 +81,13 @@ async fn insert_doc(
     let mut len = 0;
 
     for d in payload.documents {
-        let body_lines = d.body.split('\n');
-
         println!("insert {:#?} ", d.url);
         let mut doc = doc!(
             state.field.url => d.url,
             state.field.title => d.title,
         );
-        for b in body_lines {
-            let trimmed = b.trim();
-            if trimmed.len() == 0 {
-                continue;
-            }
-
-            doc.add_text(state.field.body, trimmed);
+        for b in d.body {
+            doc.add_text(state.field.body, b);
         }
 
         writer.add_document(doc)?;
@@ -139,6 +132,7 @@ struct HitsItem {
 struct HitsDoc {
     url: Vec<String>,
     title: Vec<String>,
+    // body: Vec<String>,
     body: Vec<String>,
 }
 

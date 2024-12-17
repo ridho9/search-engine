@@ -35,6 +35,7 @@ RUN apk --no-cache add --virtual build-dependencies \
     libressl \
     libxml2 \
     libxslt
+RUN apk --no-cache add nodejs npm
 
 COPY ./requirements.txt requirements.txt
 RUN pip install -r ./requirements.txt

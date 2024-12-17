@@ -12,6 +12,7 @@ import pymongo
 import os
 from scrapy.exceptions import DropItem
 import requests
+from readabilipy import simple_json_from_html_string
 
 
 class DedupPipeline:
@@ -33,25 +34,28 @@ class ExtractPipeline:
 
         raw_html: str = adapter.get("raw_html")  # type: ignore
 
-        ext_text = trf.extract(raw_html)
-        ext_meta = trf.extract_metadata(raw_html)
+        # ext_text = trf.extract(raw_html)
+        # ext_meta = trf.extract_metadata(raw_html)
 
-        html = BeautifulSoup(raw_html, features="lxml")
-        title = html.find("title")
-        if title is None:
-            title = ext_meta.title
-        else:
-            title = title.string  # type: ignore
-        if title is not None:
-            title = title.strip()
+        # html = BeautifulSoup(raw_html, features="lxml")
+        # title = html.find("title")
+        # if title is None:
+        #     title = ext_meta.title
+        # else:
+        #     title = title.string  # type: ignore
+        # if title is not None:
+        #     title = title.strip()
 
-        text = html.get_text(separator="\n")
-        bs4_text = "\n".join([x for x in text.splitlines() if x.strip() != ""])
+        # text = html.get_text(separator="\n")
+        # bs4_text = "\n".join([x for x in text.splitlines() if x.strip() != ""])
+        cleaned_data = simple_json_from_html_string(raw_html, use_readability=True)
+        plain_text = [t["text"] for t in cleaned_data["plain_text"]]  # type: ignore
+        # print(plain_text)
 
         result = dict(
             url=adapter.get("url"),
-            title=title,  # type: ignore
-            body=ext_text or bs4_text,
+            title=cleaned_data["title"],  # type: ignore
+            body=plain_text,
         )
         return result
         # return item
