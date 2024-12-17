@@ -7,7 +7,7 @@ use std::{
 
 use axum::{
     extract::{Query, State},
-    http::{header, HeaderMap, StatusCode, Uri},
+    http::{HeaderValue, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{delete, get, post},
     Json, Router,
@@ -19,8 +19,10 @@ use tantivy::{
     doc,
     query::QueryParser,
     schema::{Field, Value},
-    Document, Index, IndexReader, IndexWriter, TantivyDocument,
+    Index, IndexReader, IndexWriter, TantivyDocument,
 };
+use tower::ServiceBuilder;
+use tower_http::cors::CorsLayer;
 
 struct ServerConfig {
     index: Index,
@@ -46,6 +48,13 @@ async fn main() -> Result<(), anyhow::Error> {
         .route("/api/docs", post(insert_doc))
         .route("/api/docs", delete(delete_docs))
         .route("/api/docs", get(query_docs))
+        .layer(
+            ServiceBuilder::new().layer(
+                CorsLayer::new()
+                    .allow_origin("http://localhost:3001".parse::<HeaderValue>().unwrap())
+                    .allow_methods([Method::GET, Method::POST]),
+            ),
+        )
         .with_state(server_config);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

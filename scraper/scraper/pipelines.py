@@ -37,8 +37,8 @@ class ExtractPipeline:
         # ext_text = trf.extract(raw_html)
         # ext_meta = trf.extract_metadata(raw_html)
 
-        # html = BeautifulSoup(raw_html, features="lxml")
-        # title = html.find("title")
+        html = BeautifulSoup(raw_html, features="lxml")
+        title = html.find("title")
         # if title is None:
         #     title = ext_meta.title
         # else:
@@ -54,7 +54,7 @@ class ExtractPipeline:
 
         result = dict(
             url=adapter.get("url"),
-            title=cleaned_data["title"],  # type: ignore
+            title=title.text or cleaned_data["title"],  # type: ignore
             body=plain_text,
         )
         return result
