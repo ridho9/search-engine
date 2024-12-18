@@ -1,3 +1,4 @@
+mod docs;
 mod index;
 
 use std::{
@@ -12,16 +13,10 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
+use docs::{query_docs, HitsItem};
 use index::{build_index, IndexField};
 use serde::{Deserialize, Serialize};
-use tantivy::{
-    collector::TopDocs,
-    doc,
-    query::QueryParser,
-    schema::{Field, Value},
-    Index, IndexReader, IndexWriter, TantivyDocument,
-};
-use tower::ServiceBuilder;
+use tantivy::{doc, Index, IndexReader, IndexWriter};
 use tower_http::cors::CorsLayer;
 
 struct ServerConfig {
@@ -47,13 +42,11 @@ async fn main() -> Result<(), anyhow::Error> {
         .route("/", get(root))
         .route("/api/docs", post(insert_doc))
         .route("/api/docs", delete(delete_docs))
-        .route("/api/docs", get(query_docs))
+        .route("/api/docs", get(req_query_docs))
         .layer(
-            ServiceBuilder::new().layer(
-                CorsLayer::new()
-                    .allow_origin("http://localhost:3001".parse::<HeaderValue>().unwrap())
-                    .allow_methods([Method::GET, Method::POST]),
-            ),
+            CorsLayer::new()
+                .allow_origin("http://localhost:3001".parse::<HeaderValue>().unwrap())
+                .allow_methods([Method::GET, Method::POST]),
         )
         .with_state(server_config);
 
@@ -131,59 +124,16 @@ struct QueryResponse {
     hits: Vec<HitsItem>,
 }
 
-#[derive(Serialize)]
-struct HitsItem {
-    score: f32,
-    doc: HitsDoc,
-}
-
-#[derive(Serialize)]
-struct HitsDoc {
-    url: Vec<String>,
-    title: Vec<String>,
-    // body: Vec<String>,
-    body: Vec<String>,
-}
-
-async fn query_docs(
+async fn req_query_docs(
     State(state): State<Arc<ServerConfig>>,
     Query(query_param): Query<QueryParam>,
 ) -> Result<impl IntoResponse, AppError> {
     let start = Instant::now();
 
-    let reader = &state.reader;
-    let field = &state.field;
-    let index = &state.index;
-
-    let searcher = reader.searcher();
-    let mut query_parser = QueryParser::for_index(&index, vec![field.title, field.body]);
-    query_parser.set_field_boost(field.title, 2.0);
-    let query = query_parser.parse_query(&query_param.query)?;
-
-    let top_docs = searcher.search(&query, &TopDocs::with_limit(10))?;
-
-    let mut ret_hits = vec![];
-
-    for (score, doc_address) in top_docs {
-        let retrieved_doc: TantivyDocument = searcher.doc(doc_address)?;
-
-        let url = retrieve_str_fields(&retrieved_doc, field.url);
-        let title = retrieve_str_fields(&retrieved_doc, field.title);
-        let body = retrieve_str_fields(&retrieved_doc, field.body);
-
-        let item = HitsItem {
-            score,
-            doc: HitsDoc { url, title, body },
-        };
-
-        ret_hits.push(item);
-    }
+    let ret_hits = query_docs(state, &query_param.query)?;
 
     let elapsed_nanos = start.elapsed().as_nanos();
     let elapsed_milis = (elapsed_nanos as f64) / 1_000_000.0;
-    println!("time taken {}ms", elapsed_milis);
-
-    // Ok(([(header::CONTENT_TYPE, "application/json")], joined_str))
 
     let resp = QueryResponse {
         q: query_param.query,
@@ -192,14 +142,6 @@ async fn query_docs(
     };
 
     Ok(Json(resp))
-}
-
-fn retrieve_str_fields(retrieved_doc: &TantivyDocument, field: Field) -> Vec<String> {
-    let ret_url: Vec<_> = retrieved_doc
-        .get_all(field)
-        .map(|v| v.as_str().unwrap().to_owned())
-        .collect();
-    return ret_url;
 }
 
 struct AppError(anyhow::Error);
