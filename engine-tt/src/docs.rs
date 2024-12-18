@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tantivy::{
     collector::TopDocs,
     doc,
@@ -10,20 +10,24 @@ use tantivy::{
     Index, IndexWriter, TantivyDocument,
 };
 
-use crate::{index::IndexField, ServerConfig};
+use crate::{
+    index::{get_page_index, IndexField},
+    ServerConfig,
+};
 
 #[derive(Serialize)]
 pub struct HitsItem {
     score: f32,
-    doc: HitsDoc,
+    doc: Doc,
+    uuid: String,
     relevant_body: Vec<String>,
 }
 
-#[derive(Serialize)]
-pub struct HitsDoc {
-    url: Vec<String>,
-    title: Vec<String>,
-    body: Vec<String>,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Doc {
+    pub url: String,
+    pub title: String,
+    pub body: Vec<String>,
 }
 
 pub fn query_docs(state: Arc<ServerConfig>, query_param: &str) -> Result<Vec<HitsItem>, Error> {
@@ -42,25 +46,27 @@ pub fn query_docs(state: Arc<ServerConfig>, query_param: &str) -> Result<Vec<Hit
 
         let url = retrieve_str_fields(&retrieved_doc, field.url);
         let title = retrieve_str_fields(&retrieved_doc, field.title);
-        let body = retrieve_str_fields(&retrieved_doc, field.body);
+        // let body = retrieve_str_fields(&retrieved_doc, field.body);
+        let uuid = retrieve_str_fields(&retrieved_doc, field.uuid)
+            .first()
+            .unwrap()
+            .to_string();
 
-        let hits_doc = HitsDoc {
-            url: url.iter().map(|&s| s.to_owned()).collect(),
-            title: title.iter().map(|&s| s.to_owned()).collect(),
-            body: body.iter().map(|&s| s.to_owned()).collect(),
+        let hits_doc = Doc {
+            url: url.first().unwrap().to_string(),
+            title: title.first().unwrap().to_string(),
+            body: vec![],
         };
 
         // TODO: use mmap index
-        let relevant_body = get_relevant_body(&hits_doc, &query_param)?;
+        let relevant_body = get_relevant_body(&uuid, &query_param)?;
         // let relevant_body = vec![];
 
         let item = HitsItem {
             score,
-            doc: HitsDoc {
-                body: vec![],
-                ..hits_doc
-            },
+            doc: hits_doc,
             relevant_body,
+            uuid,
         };
 
         ret_hits.push(item);
@@ -76,46 +82,8 @@ fn retrieve_str_fields(retrieved_doc: &TantivyDocument, field: Field) -> Vec<&st
     return ret_url;
 }
 
-fn build_page_index(page: &HitsDoc) -> tantivy::Result<(Index, IndexField)> {
-    let mut schema_builder = Schema::builder();
-
-    let url = schema_builder.add_text_field("url", STORED);
-    let title = schema_builder.add_text_field("title", TEXT | STORED);
-    let body = schema_builder.add_text_field("body", TEXT | STORED | FAST);
-
-    let schema = schema_builder.build();
-
-    let index = Index::create_in_ram(schema.clone());
-
-    let mut writer: IndexWriter = index.writer(15_000_000)?;
-
-    for idx in 0..(page.body.len()) {
-        let mut cur_idx = idx;
-        let mut total_len = 0;
-
-        let mut doc = doc!();
-        doc.add_text(url, &page.url[0]);
-        doc.add_text(title, &page.title[0]);
-
-        while (total_len < 500) && (cur_idx < page.body.len()) {
-            // cumulated_lines.push(lines[cur_idx]);
-            total_len += page.body[cur_idx].len();
-
-            doc.add_text(body, &page.body[cur_idx]);
-
-            cur_idx += 1;
-        }
-        // println!("{:?}", cumulated_lines);
-
-        writer.add_document(doc)?;
-    }
-    writer.commit()?;
-
-    Ok((index, IndexField { url, title, body }))
-}
-
-fn get_relevant_body(page: &HitsDoc, query_str: &str) -> Result<Vec<String>, Error> {
-    let (index, field) = build_page_index(page)?;
+fn get_relevant_body(page_uuid: &str, query_str: &str) -> Result<Vec<String>, Error> {
+    let (index, field) = get_page_index(page_uuid)?;
 
     let reader = index.reader()?;
     let searcher = reader.searcher();

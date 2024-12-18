@@ -13,11 +13,12 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
-use docs::{query_docs, HitsItem};
-use index::{build_index, IndexField};
+use docs::{query_docs, Doc, HitsItem};
+use index::{generate_page_index, get_index, IndexField};
 use serde::{Deserialize, Serialize};
 use tantivy::{doc, Index, IndexReader, IndexWriter};
 use tower_http::cors::CorsLayer;
+use uuid::Uuid;
 
 struct ServerConfig {
     index: Index,
@@ -28,7 +29,7 @@ struct ServerConfig {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let (index, field) = build_index().expect("Failed building index");
+    let (index, field) = get_index().expect("Failed building index");
     println!("{:#?}\n", index);
 
     let server_config = Arc::new(ServerConfig {
@@ -66,35 +67,29 @@ struct InsertDoc {
     documents: Vec<Doc>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Doc {
-    // id: String,
-    url: String,
-    title: String,
-    body: Vec<String>,
-}
-
 async fn insert_doc(
     State(state): State<Arc<ServerConfig>>,
     Json(payload): Json<InsertDoc>,
 ) -> Result<String, AppError> {
     let mut writer = state.writer.lock().unwrap();
-
-    let mut len = 0;
+    let len = payload.documents.len();
 
     for d in payload.documents {
         println!("insert {:#?} ", d.url);
-        let mut doc = doc!(
-            state.field.url => d.url,
-            state.field.title => d.title,
-        );
-        for b in d.body {
+
+        let uuid = Uuid::new_v4().to_string();
+
+        let mut doc = doc!();
+        doc.add_text(state.field.url, &d.url);
+        doc.add_text(state.field.title, &d.title);
+        doc.add_text(state.field.uuid, &uuid);
+        for b in &d.body {
             doc.add_text(state.field.body, b);
         }
 
         writer.add_document(doc)?;
 
-        len += 1;
+        generate_page_index(&d, &uuid)?;
     }
 
     writer.commit()?;

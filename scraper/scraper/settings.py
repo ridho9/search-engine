@@ -97,4 +97,4 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
 
-CLOSESPIDER_ITEMCOUNT = 500
+CLOSESPIDER_ITEMCOUNT = 10

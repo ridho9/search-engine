@@ -27,6 +27,7 @@ type EngineQueryResponse = {
   hits: {
     score: number;
     doc: { url: string[]; title: string[]; body: string[] };
+    relevant_body: string[];
   }[];
 };
 
@@ -119,10 +120,14 @@ function ResultBody(params: {
       </p>
 
       {q.hits.map((hit) => (
-        <div key={hit.doc.url[0]} className="mt-2">
-          <a href={hit.doc.url[0]}>
-            <p className="font-bold text-lg">{hit.doc.title[0]}</p>
-            <p>{hit.doc.url[0]}</p>
+        <div
+          key={hit.doc.url[0]}
+          className="mt-4 card card-bordered bg-gray-800"
+        >
+          <a href={hit.doc.url[0]} className="card-body">
+            <p className="card-title font-bold text-lg">{hit.doc.title[0]}</p>
+            <p className="text-sm">{hit.doc.url[0]}</p>
+            <p className="">{hit.relevant_body.join(" ")}</p>
           </a>
         </div>
       ))}
