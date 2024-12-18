@@ -11,7 +11,7 @@ use axum::{
     Json, Router,
 };
 use docs::{query_docs, Doc, HitsItem};
-use index::{generate_page_index, MainIndexPack};
+use index::{MainIndexPack, PageIndexPack};
 use serde::{Deserialize, Serialize};
 use tantivy::doc;
 use tower_http::cors::CorsLayer;
@@ -20,15 +20,18 @@ use uuid::Uuid;
 #[derive(Clone)]
 struct ServerConfig {
     main_index: Arc<MainIndexPack>,
+    page_index: Arc<PageIndexPack>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let index_pack = MainIndexPack::load_default().expect("Failed loading main");
+    let index_pack = MainIndexPack::load_default().expect("Failed loading main index");
+    let page_index_pack = PageIndexPack::load_default().expect("Failed loading page index");
     println!("{:#?}\n", index_pack.index);
 
     let server_config = ServerConfig {
         main_index: index_pack,
+        page_index: page_index_pack,
     };
 
     let app = Router::new()
@@ -80,7 +83,7 @@ async fn insert_doc(
 
         writer.add_document(doc)?;
 
-        generate_page_index(&d, &uuid)?;
+        state.page_index.generate_page_index(&d, &uuid)?;
     }
 
     writer.commit()?;
@@ -89,8 +92,6 @@ async fn insert_doc(
 }
 
 async fn delete_docs(State(state): State<ServerConfig>) -> Result<String, AppError> {
-    println!("deleting docs");
-
     let mut writer = state.main_index.writer.lock().unwrap();
     let del_res = writer.delete_all_documents()?;
     let commit_res = writer.commit()?;

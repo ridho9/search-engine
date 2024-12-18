@@ -30,6 +30,6 @@
       2. On backend would be faster and uses the same query format
          1. Precompute index per page also
          2. Or on runtime
-            1. 9~20x latency compared to base 
+            1. 9~20x latency compared to base
 4. 
 

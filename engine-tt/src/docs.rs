@@ -11,7 +11,7 @@ use tantivy::{
 };
 
 use crate::{
-    index::{get_page_index, MainIndexField},
+    index::{MainIndexField, PageIndexField, PageIndexPack},
     ServerConfig,
 };
 
@@ -59,7 +59,7 @@ pub fn query_docs(state: &ServerConfig, query_param: &str) -> Result<Vec<HitsIte
         };
 
         // TODO: use mmap index
-        let relevant_body = get_relevant_body(&uuid, &query_param)?;
+        let relevant_body = get_relevant_body(&state.page_index, &uuid, &query_param)?;
         // let relevant_body = vec![];
 
         let item = HitsItem {
@@ -82,13 +82,19 @@ fn retrieve_str_fields(retrieved_doc: &TantivyDocument, field: Field) -> Vec<&st
     return ret_url;
 }
 
-fn get_relevant_body(page_uuid: &str, query_str: &str) -> Result<Vec<String>, Error> {
-    let (index, field) = get_page_index(page_uuid)?;
+fn get_relevant_body(
+    page_index: &PageIndexPack,
+    page_uuid: &str,
+    query_str: &str,
+) -> Result<Vec<String>, Error> {
+    let index = &page_index.index;
+    let reader = &page_index.reader;
+    let field = &page_index.field;
 
-    let reader = index.reader()?;
     let searcher = reader.searcher();
-    let query_parser = QueryParser::for_index(&index, vec![field.title, field.body]);
-    let query = query_parser.parse_query(&query_str)?;
+    let query_parser = QueryParser::for_index(&index, vec![field.body]);
+    let new_query_str = format!("{} {}", format!(r#"uuid:"{}""#, page_uuid), query_str);
+    let query = query_parser.parse_query(&new_query_str)?;
     let top_docs = searcher.search(&query, &TopDocs::with_limit(1))?;
 
     let mut ret_body = vec![];
