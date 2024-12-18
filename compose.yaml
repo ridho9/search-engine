@@ -7,29 +7,7 @@ services:
       - ./output:/output
       - ./scrapyd_data:/var/lib/scrapyd
     environment:
-      MONGO_URI: mongodb://root:password@mongo:27017/
-      MONGO_DB: search-engine
       ENGINE_HOST: http://engine-tt:3000
-
-  # mongo:
-  #   image: mongo
-  #   restart: always
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: password
-  #   volumes:
-  #     - ./mongo-data:/data/db
-
-  # mongo-express:
-  #   image: mongo-express
-  #   restart: always
-  #   ports:
-  #     - 127.0.0.1:8081:8081
-  #   environment:
-  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
-  #     ME_CONFIG_MONGODB_ADMINPASSWORD: password
-  #     ME_CONFIG_MONGODB_URL: mongodb://root:password@mongo:27017/
-  #     ME_CONFIG_BASICAUTH: false
 
   engine-tt:
     build: ./engine-tt
@@ -37,3 +15,12 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - ./index:/index
+      - ./page-index:/page-index
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_ENGINE_HOST=http://localhost:3000
+    ports:
+      - "4000:3000"

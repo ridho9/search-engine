@@ -16,4 +16,4 @@ output-fix
 .venv/
 mongo-data/
 
-index/
+*index/

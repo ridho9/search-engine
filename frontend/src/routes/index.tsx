@@ -26,7 +26,7 @@ type EngineQueryResponse = {
   elapsed_ms: number;
   hits: {
     score: number;
-    doc: { url: string[]; title: string[]; body: string[] };
+    doc: { url: string; title: string; body: string[] };
     relevant_body: string[];
   }[];
 };
@@ -44,7 +44,8 @@ function HomeComponent() {
 
       const startTime = performance.now();
 
-      const baseUrl = (import.meta as any).env.VITE_ENGINE_HOST;
+      const baseUrl =
+        (import.meta as any).env.VITE_ENGINE_HOST || "http://localhost:6969";
       const param = new URLSearchParams();
       param.set("query", search.query);
       const url = `${baseUrl}/api/docs?${param.toString()}`;
@@ -90,7 +91,7 @@ function HomeComponent() {
       <hr />
 
       <div className="my-2">
-        {q.isFetching && <p>Loading...</p>}
+        {search.query && q.isFetching && <p>Loading...</p>}
         {q.isSuccess && <ResultBody q={q.data} />}
       </div>
     </div>
@@ -119,18 +120,25 @@ function ResultBody(params: {
         </span>
       </p>
 
-      {q.hits.map((hit) => (
-        <div
-          key={hit.doc.url[0]}
-          className="mt-4 card card-bordered bg-gray-800"
-        >
-          <a href={hit.doc.url[0]} className="card-body">
-            <p className="card-title font-bold text-lg">{hit.doc.title[0]}</p>
-            <p className="text-sm">{hit.doc.url[0]}</p>
-            <p className="">{hit.relevant_body.join(" ")}</p>
-          </a>
-        </div>
-      ))}
+      {q.hits.map((hit) => {
+        const show_body = hit.relevant_body
+          .filter((s) => s.trim() != "")
+          .join(" ")
+          .slice(0, 300);
+
+        return (
+          <div
+            key={hit.doc.url[0]}
+            className="mt-4 card card-bordered bg-gray-800 max-w-5xl"
+          >
+            <a href={hit.doc.url} className="card-body">
+              <p className="card-title font-bold text-lg">{hit.doc.title}</p>
+              <p className="text-sm">{hit.doc.url}</p>
+              <p className="">{show_body}...</p>
+            </a>
+          </div>
+        );
+      })}
     </>
   );
 }
