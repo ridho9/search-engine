@@ -11,7 +11,7 @@ use tantivy::{
 };
 
 use crate::{
-    index::{get_page_index, IndexField},
+    index::{get_page_index, MainIndexField},
     ServerConfig,
 };
 
@@ -30,10 +30,10 @@ pub struct Doc {
     pub body: Vec<String>,
 }
 
-pub fn query_docs(state: Arc<ServerConfig>, query_param: &str) -> Result<Vec<HitsItem>, Error> {
-    let reader = &state.reader;
-    let field = &state.field;
-    let index = &state.index;
+pub fn query_docs(state: &ServerConfig, query_param: &str) -> Result<Vec<HitsItem>, Error> {
+    let reader = &state.main_index.reader;
+    let field = &state.main_index.field;
+    let index = &state.main_index.index;
     let searcher = reader.searcher();
     let mut query_parser = QueryParser::for_index(&index, vec![field.title, field.body]);
     query_parser.set_field_boost(field.title, 2.0);

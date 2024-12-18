@@ -1,10 +1,7 @@
 mod docs;
 mod index;
 
-use std::{
-    sync::{Arc, Mutex},
-    time::Instant,
-};
+use std::{sync::Arc, time::Instant};
 
 use axum::{
     extract::{Query, State},
@@ -14,30 +11,25 @@ use axum::{
     Json, Router,
 };
 use docs::{query_docs, Doc, HitsItem};
-use index::{generate_page_index, get_index, IndexField};
+use index::{generate_page_index, MainIndexPack};
 use serde::{Deserialize, Serialize};
-use tantivy::{doc, Index, IndexReader, IndexWriter};
+use tantivy::doc;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 
+#[derive(Clone)]
 struct ServerConfig {
-    index: Index,
-    field: IndexField,
-    writer: Mutex<IndexWriter>,
-    reader: IndexReader,
+    main_index: Arc<MainIndexPack>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    let (index, field) = get_index().expect("Failed building index");
-    println!("{:#?}\n", index);
+    let index_pack = MainIndexPack::load_default().expect("Failed loading main");
+    println!("{:#?}\n", index_pack.index);
 
-    let server_config = Arc::new(ServerConfig {
-        writer: Mutex::new(index.writer(100_000_000)?),
-        reader: index.reader()?,
-        field,
-        index,
-    });
+    let server_config = ServerConfig {
+        main_index: index_pack,
+    };
 
     let app = Router::new()
         .route("/", get(root))
@@ -63,15 +55,14 @@ async fn root() -> &'static str {
 
 #[derive(Deserialize, Debug)]
 struct InsertDoc {
-    // id: String,
     documents: Vec<Doc>,
 }
 
 async fn insert_doc(
-    State(state): State<Arc<ServerConfig>>,
+    State(state): State<ServerConfig>,
     Json(payload): Json<InsertDoc>,
 ) -> Result<String, AppError> {
-    let mut writer = state.writer.lock().unwrap();
+    let mut writer = state.main_index.writer.lock().unwrap();
     let len = payload.documents.len();
 
     for d in payload.documents {
@@ -80,11 +71,11 @@ async fn insert_doc(
         let uuid = Uuid::new_v4().to_string();
 
         let mut doc = doc!();
-        doc.add_text(state.field.url, &d.url);
-        doc.add_text(state.field.title, &d.title);
-        doc.add_text(state.field.uuid, &uuid);
+        doc.add_text(state.main_index.field.url, &d.url);
+        doc.add_text(state.main_index.field.title, &d.title);
+        doc.add_text(state.main_index.field.uuid, &uuid);
         for b in &d.body {
-            doc.add_text(state.field.body, b);
+            doc.add_text(state.main_index.field.body, b);
         }
 
         writer.add_document(doc)?;
@@ -97,10 +88,10 @@ async fn insert_doc(
     Ok(format!("insert {} items", len))
 }
 
-async fn delete_docs(State(state): State<Arc<ServerConfig>>) -> Result<String, AppError> {
+async fn delete_docs(State(state): State<ServerConfig>) -> Result<String, AppError> {
     println!("deleting docs");
 
-    let mut writer = state.writer.lock().unwrap();
+    let mut writer = state.main_index.writer.lock().unwrap();
     let del_res = writer.delete_all_documents()?;
     let commit_res = writer.commit()?;
 
@@ -120,12 +111,12 @@ struct QueryResponse {
 }
 
 async fn req_query_docs(
-    State(state): State<Arc<ServerConfig>>,
+    State(state): State<ServerConfig>,
     Query(query_param): Query<QueryParam>,
 ) -> Result<impl IntoResponse, AppError> {
     let start = Instant::now();
 
-    let ret_hits = query_docs(state, &query_param.query)?;
+    let ret_hits = query_docs(&state, &query_param.query)?;
 
     let elapsed_nanos = start.elapsed().as_nanos();
     let elapsed_milis = (elapsed_nanos as f64) / 1_000_000.0;

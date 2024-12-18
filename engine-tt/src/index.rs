@@ -1,46 +1,61 @@
+use std::sync::{Arc, Mutex};
+
 use anyhow::Error;
 use tantivy::{
     directory::MmapDirectory,
     doc,
     schema::{Field, Schema, FAST, STORED, TEXT},
-    Index, IndexWriter,
+    Index, IndexReader, IndexWriter,
 };
 
 use crate::docs::Doc;
 
-pub struct IndexField {
+pub struct MainIndexField {
     pub url: Field,
     pub title: Field,
     pub body: Field,
     pub uuid: Field,
 }
 
-pub fn get_index() -> tantivy::Result<(Index, IndexField)> {
-    let index_path = "./index";
-
-    let mut schema_builder = Schema::builder();
-    let url = schema_builder.add_text_field("url", STORED);
-    let title = schema_builder.add_text_field("title", TEXT | STORED);
-    let body = schema_builder.add_text_field("body", TEXT | STORED | FAST);
-    let uuid = schema_builder.add_text_field("uuid", STORED);
-
-    let schema = schema_builder.build();
-
-    std::fs::create_dir_all(index_path)?;
-    let dir = MmapDirectory::open(index_path)?;
-
-    let index = Index::open_or_create(dir, schema.clone())?;
-    let field = IndexField {
-        url,
-        title,
-        body,
-        uuid,
-    };
-
-    Ok((index, field))
+pub struct MainIndexPack {
+    pub index: Index,
+    pub field: MainIndexField,
+    pub writer: Mutex<IndexWriter>,
+    pub reader: IndexReader,
 }
 
-pub fn get_page_index(page_uuid: &str) -> tantivy::Result<(Index, IndexField)> {
+impl MainIndexPack {
+    pub fn load_default() -> Result<Arc<MainIndexPack>, Error> {
+        let index_path = "./index";
+
+        let mut schema_builder = Schema::builder();
+        let url = schema_builder.add_text_field("url", STORED);
+        let title = schema_builder.add_text_field("title", TEXT | STORED);
+        let body = schema_builder.add_text_field("body", TEXT | STORED | FAST);
+        let uuid = schema_builder.add_text_field("uuid", STORED);
+
+        let schema = schema_builder.build();
+
+        std::fs::create_dir_all(index_path)?;
+        let dir = MmapDirectory::open(index_path)?;
+
+        let index = Index::open_or_create(dir, schema.clone())?;
+
+        Ok(Arc::new(MainIndexPack {
+            writer: Mutex::new(index.writer(100_000_000)?),
+            reader: index.reader()?,
+            index,
+            field: MainIndexField {
+                url,
+                title,
+                body,
+                uuid,
+            },
+        }))
+    }
+}
+
+pub fn get_page_index(page_uuid: &str) -> tantivy::Result<(Index, MainIndexField)> {
     let mut schema_builder = Schema::builder();
 
     let url = schema_builder.add_text_field("url", STORED);
@@ -58,7 +73,7 @@ pub fn get_page_index(page_uuid: &str) -> tantivy::Result<(Index, IndexField)> {
 
     Ok((
         index,
-        IndexField {
+        MainIndexField {
             url,
             title,
             body,
