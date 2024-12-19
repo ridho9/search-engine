@@ -6,11 +6,11 @@
 
 
 :80 {
-    handle_path /engine/* {
+    handle_path /engine* {
         reverse_proxy engine-tt:3000
     }
 
-    handle_path /scraper/* {
+    handle_path /scraper* {
         request_header X-Forwarded-Prefix /scraper
         reverse_proxy scraper:6800
     }
