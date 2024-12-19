@@ -54,6 +54,8 @@ function HomeComponent() {
       const endTime = performance.now();
       const reqTime = endTime - startTime;
 
+      if (resp.status !== 200) throw Error(`query error: ${await resp.text()}`);
+
       const json = (await resp.json()) as EngineQueryResponse;
 
       return { ...json, client_ms: reqTime };
