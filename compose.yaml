@@ -21,7 +21,7 @@ services:
     build:
       context: ./frontend
       args:
-        - VITE_ENGINE_HOST=/engine-api
+        - VITE_ENGINE_HOST=/engine
 
   caddy:
     image: caddy:2.9-alpine
