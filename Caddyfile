@@ -2,6 +2,11 @@ http://localhost {
     handle_path /engine/* {
         reverse_proxy engine-tt:3000
     }
+
+    handle_path /scraper/* {
+        reverse_proxy scraper:6800
+    }
+
     handle {
         reverse_proxy frontend:3000
     }
