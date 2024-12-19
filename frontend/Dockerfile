@@ -1,11 +1,14 @@
 FROM oven/bun:1 AS base
 
-ARG VITE_ENGINE_HOST
-ENV VITE_ENGINE_HOST=${VITE_ENGINE_HOST}
+ENV NODE_ENV=production
 
 WORKDIR /app
 COPY package.json bun.lockb ./
 RUN bun install
+
+ARG VITE_ENGINE_HOST
+ENV VITE_ENGINE_HOST=${VITE_ENGINE_HOST}
+
 COPY . .
 RUN bun run build
 

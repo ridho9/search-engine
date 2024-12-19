@@ -1,0 +1,8 @@
+http://localhost {
+    handle_path /engine/* {
+        reverse_proxy engine-tt:3000
+    }
+    handle {
+        reverse_proxy frontend:3000
+    }
+}
