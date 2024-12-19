@@ -31,6 +31,7 @@ class DedupPipeline:
 class ExtractPipeline:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
+        url = adapter.get("url")
 
         raw_html: str = adapter.get("raw_html")  # type: ignore
 
@@ -38,24 +39,28 @@ class ExtractPipeline:
 
         html = BeautifulSoup(raw_html, features="lxml")
         title_el = html.find("title")
-        if title_el is not None:
-            title = title_el.text
-        else:
-            ext_meta = trf.extract_metadata(raw_html)
-            if ext_meta.title is not None:
-                title = ext_meta.title
-            else:
-                if cleaned_data is not None:
-                    title = cleaned_data["title"]
-                else:
-                    title = adapter.get("url")
 
-        # text = html.get_text(separator="\n")
-        # bs4_text = "\n".join([x for x in text.splitlines() if x.strip() != ""])
-        if cleaned_data["plain_text"] is not None:
+        title = None
+        if title is None and title_el is not None:
+            title = title_el.text
+
+        if title is None:
+            ext_meta = trf.extract_metadata(raw_html)
+            if ext_meta is not None and ext_meta.title is not None:
+                title = ext_meta.title
+
+        if title is None:
+            if cleaned_data is not None and "title" in cleaned_data:
+                title = cleaned_data["title"]
+
+        if title is None:
+            title = url
+
+        if cleaned_data is not None and cleaned_data["plain_text"] is not None:
             plain_text = [t["text"] for t in cleaned_data["plain_text"]]  # type: ignore
         else:
-            plain_text = trf.extract(raw_html)
+            plain_text = trf.extract(raw_html).split("\n")  # type: ignore
+        print(f"{url} {title} {len(plain_text)}")
 
         result = dict(
             url=adapter.get("url"),
@@ -96,13 +101,8 @@ class MongoPipeline:
 
 
 class IndexPipeline:
-    BATCH_SIZE = 100
+    BATCH_SIZE = 10
 
-    # def process_item(self, item, spider):
-    #     adapter = ItemAdapter(item)
-    #     host = os.getenv("ENGINE_HOST") or "http://localhost:3000"
-    #     resp = requests.post(host + "/api/docs", json=adapter.asdict())
-    #     print(f"insert {adapter.get("url")} {resp.status_code} {resp.text}")
     def open_spider(self, spider):
         self.items = []
 
@@ -110,15 +110,17 @@ class IndexPipeline:
         self.items.append(ItemAdapter(item).asdict())
 
         if len(self.items) >= self.BATCH_SIZE:
-            self.commit()
+            self.commit(spider)
 
     def close_spider(self, spider):
-        self.commit()
+        self.commit(spider)
 
-    def commit(self):
+    def commit(self, spider):
         host = os.getenv("ENGINE_HOST") or "http://localhost:3000"
         json = {"documents": self.items}
         resp = requests.post(host + "/api/docs", json=json)
-        print(f"insert {resp.status_code} {resp.text}")
+        print(
+            f"insert {resp.status_code} {resp.text} {host} orig:itemcount{len(self.items)}"
+        )
 
         self.items = []
