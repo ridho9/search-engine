@@ -92,7 +92,7 @@ impl PageIndexPack {
         }))
     }
 
-    pub fn generate_page_index(&self, page: &Doc, page_uuid: &str) -> Result<(), Error> {
+    pub fn stage_page_index(&self, page: &Doc, page_uuid: &str) -> Result<(), Error> {
         let PageIndexPack { field, writer, .. } = self;
 
         let mut writer = writer.lock().unwrap();
@@ -114,7 +114,7 @@ impl PageIndexPack {
 
             writer.add_document(doc)?;
         }
-        writer.commit()?;
+        // writer.commit()?;
 
         Ok(())
     }

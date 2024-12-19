@@ -83,8 +83,9 @@ async fn insert_doc(
 
         writer.add_document(doc)?;
 
-        state.page_index.generate_page_index(&d, &uuid)?;
+        state.page_index.stage_page_index(&d, &uuid)?;
     }
+    state.page_index.writer.lock().unwrap().commit()?;
 
     writer.commit()?;
 
