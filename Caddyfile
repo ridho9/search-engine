@@ -1,4 +1,11 @@
-http://localhost {
+{
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+
+:80 {
     handle_path /engine/* {
         reverse_proxy engine-tt:3000
     }

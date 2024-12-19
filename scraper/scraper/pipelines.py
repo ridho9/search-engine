@@ -52,7 +52,7 @@ class ExtractPipeline:
 
         # text = html.get_text(separator="\n")
         # bs4_text = "\n".join([x for x in text.splitlines() if x.strip() != ""])
-        if cleaned_data is not None:
+        if cleaned_data["plain_text"] is not None:
             plain_text = [t["text"] for t in cleaned_data["plain_text"]]  # type: ignore
         else:
             plain_text = trf.extract(raw_html)
