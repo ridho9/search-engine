@@ -57,3 +57,9 @@ Built using React.
 When using proxy, we will have a list of proxy that could be used to send the requests.
 For some paid proxy provider, either they have their own list, or they have the endpoint that can be used to query a page.
 Sometime they have features like captcha detection and even rendering js pages.
+
+## Possible improvement
+
+1. Use embeddings for better, contextual, search
+2. Resumable and extendable scraping job
+3. Etc
