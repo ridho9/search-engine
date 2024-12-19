@@ -92,6 +92,7 @@ function HomeComponent() {
 
       <div className="my-2">
         {search.query && q.isFetching && <p>Loading...</p>}
+        {search.query && q.isError && <p>Error: {q.error.message}</p>}
         {q.isSuccess && <ResultBody q={q.data} />}
       </div>
     </div>
