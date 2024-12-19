@@ -40,7 +40,10 @@ RUN apk --no-cache add nodejs npm
 COPY ./requirements.txt requirements.txt
 RUN pip install -r ./requirements.txt
 
+RUN cd $(pip show readabilipy | grep Loc | sed 's/Location: //')/readabilipy/javascript && npm install && npm install
+
 # Mount two volumes for configuration and runtime.
+WORKDIR /
 
 VOLUME /etc/scrapyd/ /var/lib/scrapyd/
 

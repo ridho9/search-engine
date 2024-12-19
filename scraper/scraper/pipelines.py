@@ -34,31 +34,35 @@ class ExtractPipeline:
 
         raw_html: str = adapter.get("raw_html")  # type: ignore
 
-        # ext_text = trf.extract(raw_html)
-        # ext_meta = trf.extract_metadata(raw_html)
+        cleaned_data = simple_json_from_html_string(raw_html, use_readability=True)
 
         html = BeautifulSoup(raw_html, features="lxml")
-        title = html.find("title")
-        # if title is None:
-        #     title = ext_meta.title
-        # else:
-        #     title = title.string  # type: ignore
-        # if title is not None:
-        #     title = title.strip()
+        title_el = html.find("title")
+        if title_el is not None:
+            title = title_el.text
+        else:
+            ext_meta = trf.extract_metadata(raw_html)
+            if ext_meta.title is not None:
+                title = ext_meta.title
+            else:
+                if cleaned_data is not None:
+                    title = cleaned_data["title"]
+                else:
+                    title = adapter.get("url")
 
         # text = html.get_text(separator="\n")
         # bs4_text = "\n".join([x for x in text.splitlines() if x.strip() != ""])
-        cleaned_data = simple_json_from_html_string(raw_html, use_readability=True)
-        plain_text = [t["text"] for t in cleaned_data["plain_text"]]  # type: ignore
-        # print(plain_text)
+        if cleaned_data is not None:
+            plain_text = [t["text"] for t in cleaned_data["plain_text"]]  # type: ignore
+        else:
+            plain_text = trf.extract(raw_html)
 
         result = dict(
             url=adapter.get("url"),
-            title=title.text or cleaned_data["title"],  # type: ignore
+            title=title,  # type: ignore
             body=plain_text,
         )
         return result
-        # return item
 
 
 class MongoPipeline:
