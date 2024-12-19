@@ -60,6 +60,8 @@ function HomeComponent() {
 
       return { ...json, client_ms: reqTime };
     },
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 
   const submitForm = (ev: React.FormEvent<HTMLFormElement>) => {
