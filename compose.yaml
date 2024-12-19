@@ -1,8 +1,8 @@
 services:
   scraper:
     build: ./scraper
-    ports:
-      - "127.0.0.1:6800:6800"
+    # ports:
+    #   - "127.0.0.1:6800:6800"
     volumes:
       - ./output:/output
       - ./scrapyd_data:/var/lib/scrapyd
@@ -11,8 +11,8 @@ services:
 
   engine-tt:
     build: ./engine-tt
-    ports:
-      - "127.0.0.1:3000:3000"
+    # ports:
+    #   - "127.0.0.1:3000:3000"
     volumes:
       - ./index:/index
       - ./page-index:/page-index

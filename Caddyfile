@@ -11,6 +11,7 @@
     }
 
     handle_path /scraper/* {
+        request_header X-Forwarded-Prefix /scraper
         reverse_proxy scraper:6800
     }
 

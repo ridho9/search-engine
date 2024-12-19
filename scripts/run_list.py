@@ -31,7 +31,7 @@ def start_scrape(scrape_url):
         }
 
         response = requests.post(
-            "http://localhost:6800/schedule.json", headers=headers, data=data
+            "http://localhost:5000/scraper/schedule.json", headers=headers, data=data
         )
         resp = response.json()
         print(
