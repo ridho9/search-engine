@@ -110,6 +110,7 @@ struct QueryResponse {
     q: String,
     elapsed_ms: f64,
     hits: Vec<HitsItem>,
+    count: usize,
 }
 
 async fn req_query_docs(
@@ -118,7 +119,7 @@ async fn req_query_docs(
 ) -> Result<impl IntoResponse, AppError> {
     let start = Instant::now();
 
-    let ret_hits = query_docs(&state, &query_param.query)?;
+    let (ret_hits, count) = query_docs(&state, &query_param.query)?;
 
     let elapsed_nanos = start.elapsed().as_nanos();
     let elapsed_milis = (elapsed_nanos as f64) / 1_000_000.0;
@@ -127,6 +128,7 @@ async fn req_query_docs(
         q: query_param.query,
         elapsed_ms: elapsed_milis,
         hits: ret_hits,
+        count,
     };
 
     Ok(Json(resp))

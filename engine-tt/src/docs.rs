@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Error;
 use serde::{Deserialize, Serialize};
 use tantivy::{
-    collector::TopDocs,
+    collector::{Count, TopDocs},
     doc,
     query::QueryParser,
     schema::{Field, Schema, Value, FAST, STORED, TEXT},
@@ -30,7 +30,10 @@ pub struct Doc {
     pub body: Vec<String>,
 }
 
-pub fn query_docs(state: &ServerConfig, query_param: &str) -> Result<Vec<HitsItem>, Error> {
+pub fn query_docs(
+    state: &ServerConfig,
+    query_param: &str,
+) -> Result<(Vec<HitsItem>, usize), Error> {
     let reader = &state.main_index.reader;
     let field = &state.main_index.field;
     let index = &state.main_index.index;
@@ -39,7 +42,7 @@ pub fn query_docs(state: &ServerConfig, query_param: &str) -> Result<Vec<HitsIte
     query_parser.set_field_boost(field.title, 2.0);
 
     let query = query_parser.parse_query(&query_param)?;
-    let top_docs = searcher.search(&query, &TopDocs::with_limit(10))?;
+    let (top_docs, total_count) = searcher.search(&query, &(TopDocs::with_limit(10), Count))?;
     let mut ret_hits = vec![];
     for (score, doc_address) in top_docs {
         let retrieved_doc: TantivyDocument = searcher.doc(doc_address)?;
@@ -71,7 +74,7 @@ pub fn query_docs(state: &ServerConfig, query_param: &str) -> Result<Vec<HitsIte
 
         ret_hits.push(item);
     }
-    Ok(ret_hits)
+    Ok((ret_hits, total_count))
 }
 
 fn retrieve_str_fields(retrieved_doc: &TantivyDocument, field: Field) -> Vec<&str> {
