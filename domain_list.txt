@@ -63,7 +63,6 @@ git-scm.com
 gnu.org
 gnucobol.sourceforge.io
 go.dev
-golang.org
 graphite.readthedocs.io
 groovy-lang.org
 gruntjs.com
