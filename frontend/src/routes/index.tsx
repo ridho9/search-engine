@@ -29,6 +29,7 @@ type EngineQueryResponse = {
     doc: { url: string; title: string; body: string[] };
     relevant_body: string[];
   }[];
+  count?: number;
 };
 
 function HomeComponent() {
@@ -112,6 +113,7 @@ function ResultBody(params: {
 
   return (
     <>
+      {q.count !== undefined && <p>Documents matches: {q.count}</p>}
       <p className="flex items-center">
         Internal time: {q?.elapsed_ms.toFixed(3)}ms{" "}
         <span title="time taken by the engine to query" className="ml-2">
