@@ -32,7 +32,7 @@ impl MainIndexPack {
         let url = schema_builder.add_text_field("url", STORED);
         let title = schema_builder.add_text_field("title", TEXT | STORED);
         let body = schema_builder.add_text_field("body", TEXT | STORED);
-        let uuid = schema_builder.add_text_field("uuid", STORED);
+        let uuid = schema_builder.add_text_field("uuid", TEXT | STORED | FAST);
 
         let schema = schema_builder.build();
 
